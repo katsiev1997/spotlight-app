@@ -1,35 +1,68 @@
+import Loader from "@/components/Loader";
+import Post from "@/components/Post";
+import Story from "@/components/Story";
+import { STORIES } from "@/constants/mock-data";
+import { COLORS } from "@/constants/theme";
+import { api } from "@/convex/_generated/api";
+import { styles } from "@/styles/feed.styles";
 import { useAuth } from "@clerk/clerk-expo";
-import { Link } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useQuery } from "convex/react";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function Index() {
 	const { signOut } = useAuth();
+
+	const posts = useQuery(api.posts.getFeedPosts);
+
+	if (!posts) return <Loader />;
+
+	if (posts.length === 0) return <NoPostFound />;
+
 	return (
 		<View style={styles.container}>
-			<Link href={"/notifications"}>Feed screen in tabs</Link>
-			{/* Sign out button */}
-			<TouchableOpacity onPress={() => signOut()}>
-				<View style={styles.button}>
-					<Text style={styles.buttonText}>Sign out</Text>
-				</View>
-			</TouchableOpacity>
+			{/* HEADER  */}
+			<View style={styles.header}>
+				<Text style={styles.headerTitle}>Spotlight</Text>
+				<TouchableOpacity onPress={() => signOut()}>
+					<Ionicons name="log-out-outline" size={24} color={COLORS.white} />
+				</TouchableOpacity>
+			</View>
+
+			<ScrollView
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 60 }}
+			>
+				{/* STORIES */}
+
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={true}
+					style={styles.storiesContainer}
+				>
+					{STORIES.map((story) => (
+						<Story key={story.id} story={story} />
+					))}
+				</ScrollView>
+
+				{/* POST */}
+				{posts.map((post) => (
+					<Post key={post._id} post={post} />
+				))}
+			</ScrollView>
 		</View>
 	);
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		alignItems: "center",
-		justifyContent: "center",
-	},
-	button: {
-		backgroundColor: "#FF0000",
-		padding: 12,
-		borderRadius: 4,
-	},
-	buttonText: {
-		color: "white",
-		fontSize: 18,
-	},
-});
+const NoPostFound = () => (
+	<View
+		style={{
+			flex: 1,
+			justifyContent: "center",
+			alignItems: "center",
+			backgroundColor: COLORS.background,
+		}}
+	>
+		<Text style={{ fontSize: 20, color: COLORS.primary }}>No posts found</Text>
+	</View>
+);
